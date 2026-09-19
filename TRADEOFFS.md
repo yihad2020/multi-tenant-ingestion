@@ -63,11 +63,11 @@ that already completed successfully is skipped.
 
 **Record idempotency**
 
-Individual records will also have tenant-scoped natural keys. This handles
+Individual records also use tenant-scoped natural keys. This handles
 overlapping exports where a new physical file contains records already seen
 in an earlier file.
 
-A failed or interrupted run is retryable. Record ingestion will happen inside
+A failed or interrupted run is retryable. Record ingestion happens inside
 a PostgreSQL transaction, so a process failure during a batch does not leave
 a partially committed batch.
 
