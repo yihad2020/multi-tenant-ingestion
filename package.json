@@ -1,0 +1,29 @@
+{
+  "name": "multi-tenant-ingestion",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "tsx src/cli.ts",
+    "ingest": "tsx src/cli.ts ingest",
+    "status": "tsx src/cli.ts status",
+    "migrate": "tsx src/cli.ts migrate",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "csv-parse": "^7.0.2",
+    "dotenv": "^18.0.1",
+    "pg": "^8.23.0",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.2",
+    "@types/pg": "^8.23.1",
+    "tsx": "^4.23.13",
+    "typescript": "^7.0.2"
+  }
+}
