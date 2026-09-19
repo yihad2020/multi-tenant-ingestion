@@ -9,7 +9,8 @@
     "status": "tsx src/cli.ts status",
     "migrate": "tsx src/cli.ts migrate",
     "typecheck": "tsc --noEmit",
-    "sync": "tsx src/cli.ts sync"
+    "sync": "tsx src/cli.ts sync",
+    "verify:replay": "tsx src/verification/replay.ts"
   },
   "keywords": [],
   "author": "",

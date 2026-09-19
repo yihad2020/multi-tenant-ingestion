@@ -15,23 +15,35 @@ import type {
 } from "./run-store.js";
 
 
+type InsertRawOptions = {
+  /**
+   * Verification-only fault injection.
+   *
+   * Production callers leave this undefined.
+   */
+  simulateFailureAfterRows?: number;
+};
+
+
 export async function insertRawRecords(
   batch: ManifestBatch,
   runId: string,
   records: ParsedRecord[],
+  options: InsertRawOptions = {},
 ): Promise<RunStats> {
   return withTenant(
     batch.tenant,
     async (client) => {
       let rowsInserted = 0;
       let rowsSkipped = 0;
+      let rowsProcessed = 0;
 
       /*
        * The entire batch is inside the transaction
        * created by withTenant().
        *
-       * If the process throws halfway through this
-       * function, PostgreSQL rolls the batch back.
+       * If an error is thrown halfway through,
+       * withTenant() rolls the transaction back.
        */
       for (const record of records) {
         const result =
@@ -77,6 +89,25 @@ export async function insertRawRecords(
           rowsInserted += 1;
         } else {
           rowsSkipped += 1;
+        }
+
+        rowsProcessed += 1;
+
+        /*
+         * Verification-only crash simulation.
+         *
+         * Throwing here causes the entire batch
+         * transaction to roll back.
+         */
+        if (
+          options.simulateFailureAfterRows
+            !== undefined
+          && rowsProcessed
+            >= options.simulateFailureAfterRows
+        ) {
+          throw new Error(
+            `Simulated interruption after ${rowsProcessed} rows`
+          );
         }
       }
 

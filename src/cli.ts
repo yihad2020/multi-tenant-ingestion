@@ -14,6 +14,10 @@ import {
   runIngestion,
 } from "./ingestion/runner.js";
 
+import {
+  reportSourceStatus,
+} from "./monitoring/source-status.js";
+
 const command = process.argv[2];
 
 
@@ -31,11 +35,23 @@ async function main() {
       await runIngestion();
       break;
 
-    case "status":
-      console.log(
-        "Source status not implemented yet."
-      );
+    case "status": {
+      const result =
+        await reportSourceStatus();
+
+      if (!result.healthy) {
+        /*
+        * Monitoring-friendly non-zero exit code.
+        *
+        * The supplied fixtures intentionally contain
+        * one missing batch, so exit code 2 is expected
+        * for the assessment dataset.
+        */
+        process.exitCode = 2;
+      }
+
       break;
+}
 
     default:
       console.log(`

@@ -96,3 +96,50 @@ but incorrect downstream data.
 I deliberately did not implement a generic schema registry in the time box.
 For three sources, explicit version handling is easier to understand and
 safer to defend.
+
+## Batch atomicity
+
+Each raw batch is inserted inside one PostgreSQL transaction.
+
+If processing fails halfway through a batch, the raw inserts roll back.
+The ingestion run may remain `running` if the process itself dies, but that
+state is deliberately retryable.
+
+This gives the pipeline two layers of replay safety:
+
+1. transaction rollback protects interrupted batches
+2. tenant-scoped natural keys protect replay and overlapping exports
+
+## Source arrival monitoring
+
+Expected batches and actual ingestion runs are intentionally separate.
+
+`npm run status` distinguishes:
+
+- `MISSING`: expected source file is physically absent
+- `PENDING`: source exists but has not yet been ingested
+- `FAILED`: ingestion attempted and failed
+- `RUNNING`: ingestion is active or was interrupted before status cleanup
+- completed batches
+
+The command returns a non-zero exit code when attention is required, so it
+can be used by an external scheduler or alerting system without parsing logs.
+
+The supplied fixture correctly reports Lumen ad-spend batch 3 as missing.
+
+## Interrupted-run recovery
+
+I added a reproducible fault-injection verification for batch atomicity.
+
+The verification throws after approximately one third of a batch has been
+inserted inside its PostgreSQL transaction. The transaction rolls back to
+zero committed rows while the ingestion run deliberately remains `running`,
+which represents a process dying before status cleanup.
+
+The next normal ingestion treats that stale `running` run as retryable,
+processes the batch again, and restores the complete dataset without
+double-counting.
+
+I did not implement worker leases or heartbeats. With multiple concurrent
+workers, a production version should distinguish an actively owned run from
+a stale `running` run before retrying it.
