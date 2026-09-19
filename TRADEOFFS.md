@@ -16,7 +16,7 @@ I chose to implement deeply:
 4. late-arriving record behavior
 5. missing-source detection
 
-I will implement raw → staging → queryable models, but deliberately keep
+I implemented raw → staging → queryable models, but deliberately keep
 the modelling layer small.
 
 I am not prioritizing an HTTP API, scheduler, queue, UI, or generalized
@@ -181,3 +181,92 @@ This makes current queries eventually correct, but means previously exported
 or cached reports may differ from later queries. If the business required
 immutable financial snapshots, I would introduce reporting cutoffs and
 versioned snapshots instead.
+
+## What I deliberately did not build
+
+Given the assessment time-box, I deliberately did not add:
+
+- an HTTP API
+- a UI
+- a workflow scheduler
+- a message queue
+- distributed worker coordination
+- a generic schema registry
+- dbt or a separate warehouse
+- materialized reporting snapshots
+- automatic source-specific alert delivery
+
+These would increase breadth without materially improving the ingestion
+failure modes I chose to demonstrate deeply.
+
+The service instead exposes CLI commands that make the important behaviors
+easy to run and verify locally.
+
+
+## Adding a third client
+
+A third client should be configuration work rather than application code.
+
+If the new client uses the same three source contracts, onboarding consists
+of adding its expected batches to the manifest and running the normal sync
+and ingestion commands.
+
+The tenant ID becomes part of the same database keys and Row-Level Security
+boundary automatically.
+
+If a future tenant introduces a genuinely different source contract, I would
+add a new source/schema version rather than branch on the tenant name.
+
+
+## What I would build with another week
+
+With additional time I would add:
+
+1. integration tests running against a disposable PostgreSQL instance
+2. worker leases and heartbeats for safe concurrent ingestion workers
+3. structured logs and metrics for ingestion latency and source freshness
+4. alert delivery for missing/failed sources
+5. payload hashes or source-version history for mutable records
+6. incremental warehouse/dbt models for larger datasets
+7. reporting cutoffs or versioned snapshots where immutable reporting is
+   required
+8. CI that performs a clean database setup, ingestion, and verification suite
+
+
+## Hardest part
+
+The hardest design problem was defining replay semantics without confusing
+file delivery identity with business-record identity.
+
+Hashing files solves exact redelivery but does not solve overlapping exports.
+Natural record keys solve overlap but do not tell us whether a physical file
+has already completed successfully.
+
+I therefore modeled both independently and combined them with transactional
+batch ingestion.
+
+The controlled interruption verification was useful because it demonstrates
+that this design works under the failure mode rather than only describing it.
+
+
+## Final scope
+
+Completed:
+
+- ingestion for all three sources
+- both supplied tenants through the same code path
+- raw → staging → queryable models
+- exact-file replay protection
+- overlapping-export deduplication
+- interrupted-batch rollback and retry
+- explicit ad-spend schema-version handling
+- late-arriving record restatement
+- missing-source monitoring
+- PostgreSQL-enforced tenant isolation
+
+Intentionally incomplete:
+
+- the absent Lumen ad-spend batch cannot be ingested because no source file was
+  supplied
+- distributed worker coordination is not implemented
+- scheduling and external alert delivery are outside the submitted scope
