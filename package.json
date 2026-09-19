@@ -8,7 +8,8 @@
     "ingest": "tsx src/cli.ts ingest",
     "status": "tsx src/cli.ts status",
     "migrate": "tsx src/cli.ts migrate",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "sync": "tsx src/cli.ts sync"
   },
   "keywords": [],
   "author": "",

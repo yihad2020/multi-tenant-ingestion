@@ -36,3 +36,42 @@ Before implementation I inspected the fixture set and identified:
 
 These observations shaped the architecture rather than being handled as
 one-off patches.
+
+## Manifest-driven onboarding
+
+The manifest is treated as configuration, not as client-specific code.
+
+Tenants are discovered from manifest entries and synchronized into the
+database. Expected source batches are also synchronized from that same
+configuration.
+
+A third client therefore requires new manifest entries and fixture/source
+configuration, not a new table, model, or branch on the client name.
+
+The manifest records what *should* arrive. It is intentionally synchronized
+even when the referenced physical file is missing. This distinction allows
+monitoring to detect an expected source that never arrived.
+
+## Replay strategy
+
+Replay is handled at two independent levels.
+
+**File idempotency**
+
+`(tenant_id, source, file_hash)` identifies an exact file redelivery. A file
+that already completed successfully is skipped.
+
+**Record idempotency**
+
+Individual records will also have tenant-scoped natural keys. This handles
+overlapping exports where a new physical file contains records already seen
+in an earlier file.
+
+A failed or interrupted run is retryable. Record ingestion will happen inside
+a PostgreSQL transaction, so a process failure during a batch does not leave
+a partially committed batch.
+
+A run left in `running` state by a process crash is treated as retryable on
+the next execution. I deliberately did not implement distributed leases or
+heartbeats because this assessment uses a single worker. In production,
+concurrent workers would require an ownership/lease mechanism.
