@@ -11,7 +11,8 @@
     "typecheck": "tsc --noEmit",
     "sync": "tsx src/cli.ts sync",
     "verify:replay": "tsx src/verification/replay.ts",
-    "report": "tsx src/cli.ts report"
+    "report": "tsx src/cli.ts report",
+    "verify:tenant": "tsx src/verification/tenant-isolation.ts"
   },
   "keywords": [],
   "author": "",

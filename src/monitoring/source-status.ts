@@ -21,8 +21,8 @@ type BatchStatusRow = {
   source: string;
   batch_number: number;
   source_path: string;
-  covers_from: string;
-  covers_to: string;
+ covers_from: string | Date;
+ covers_to: string | Date;
 
   run_status:
     | "running"
@@ -133,6 +133,19 @@ export async function reportSourceStatus() {
     running: 0,
   };
 
+  function formatDate(
+  value: string | Date,
+) {
+  if (value instanceof Date) {
+    return value
+      .toISOString()
+      .slice(0, 10);
+  }
+
+  return String(value)
+    .slice(0, 10);
+}
+
 
   console.log(
     "\n"
@@ -167,7 +180,7 @@ export async function reportSourceStatus() {
           `tenant=${row.tenant_id}`,
           `source=${row.source}`,
           `batch=${row.batch_number}`,
-          `window=${row.covers_from}..${row.covers_to}`,
+          `window=${formatDate(row.covers_from)}..${formatDate(row.covers_to)}`,
           `path=${row.source_path}`,
         ].join(" ")
       );
