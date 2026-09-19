@@ -75,3 +75,24 @@ A run left in `running` state by a process crash is treated as retryable on
 the next execution. I deliberately did not implement distributed leases or
 heartbeats because this assessment uses a single worker. In production,
 concurrent workers would require an ownership/lease mechanism.
+
+## Schema drift
+
+The ad-spend fixture changes its spend column from `spend` to `cost_usd`
+partway through the dataset.
+
+I chose to adapt to this specific known change explicitly:
+
+- `spend` is recognized as ad-spend schema v1
+- `cost_usd` is recognized as ad-spend schema v2
+
+The raw payload is preserved as received. Normalization happens later in
+staging.
+
+Any other column shape fails loudly rather than being silently accepted.
+This prevents an unknown upstream contract change from producing plausible
+but incorrect downstream data.
+
+I deliberately did not implement a generic schema registry in the time box.
+For three sources, explicit version handling is easier to understand and
+safer to defend.

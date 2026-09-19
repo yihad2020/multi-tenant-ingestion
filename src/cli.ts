@@ -10,6 +10,9 @@ import {
   syncManifestConfiguration,
 } from "./config/sync.js";
 
+import {
+  runIngestion,
+} from "./ingestion/runner.js";
 
 const command = process.argv[2];
 
@@ -25,9 +28,7 @@ async function main() {
       break;
 
     case "ingest":
-      console.log(
-        "Ingestion parsing not implemented yet."
-      );
+      await runIngestion();
       break;
 
     case "status":
