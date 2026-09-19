@@ -18,6 +18,10 @@ import {
   reportSourceStatus,
 } from "./monitoring/source-status.js";
 
+import {
+  printTenantReport,
+} from "./modeling/report.js";
+
 const command = process.argv[2];
 
 
@@ -49,6 +53,22 @@ async function main() {
         */
         process.exitCode = 2;
       }
+
+      break;
+}
+    case "report": {
+      const tenantId =
+        process.argv[3];
+
+      if (!tenantId) {
+        throw new Error(
+          "Usage: npm run report -- <tenant-id>"
+        );
+      }
+
+      await printTenantReport(
+        tenantId
+      );
 
       break;
 }

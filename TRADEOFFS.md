@@ -143,3 +143,41 @@ double-counting.
 I did not implement worker leases or heartbeats. With multiple concurrent
 workers, a production version should distinguish an actively owned run from
 a stale `running` run before retrying it.
+
+## Raw, staging, and queryable models
+
+The pipeline keeps source payloads intact in `raw_records`.
+
+Staging views then normalize types and source representation:
+
+- timestamps become typed PostgreSQL timestamps/dates
+- casing is normalized where appropriate
+- ad-spend `spend` and `cost_usd` both become `spend_usd`
+
+Queryable daily views aggregate the normalized staging layer.
+
+I chose PostgreSQL views rather than materialized tables or a separate
+transformation framework because the fixture volume is small and this keeps
+the assessment focused on ingestion correctness. At larger scale I would
+move these transformations into incremental warehouse/dbt models.
+
+
+## Late-arriving records
+
+Records are modeled using their business/event timestamp, not their file
+arrival timestamp.
+
+The Northwind email fixture contains events delivered in a later batch whose
+`occurred_at` dates belong to earlier reporting days.
+
+I chose a restatement policy: historical daily metrics are allowed to change
+when valid late records arrive.
+
+Because the marts are views over the current staging data, a newly ingested
+late event automatically appears in its original historical reporting date.
+No explicit backfill job is required for this implementation.
+
+This makes current queries eventually correct, but means previously exported
+or cached reports may differ from later queries. If the business required
+immutable financial snapshots, I would introduce reporting cutoffs and
+versioned snapshots instead.
